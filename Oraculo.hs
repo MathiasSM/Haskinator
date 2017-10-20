@@ -1,32 +1,44 @@
--- Se supone que los errores los lancemos para catch y eso? 
--- Habrá que hacer el main y hacer los catch allá de alguna manera
--- Porque si no se pueden modificar estas funciones para que sean Either...
+module Oraculo
+( Opciones
+, Oraculo(..)
+, crearOraculo
+, prediccion
+, pregunta
+, opciones
+, respuesta 
+) where
 
 -- Imports
---------------------------------------
-import qualified Data.Map as M 
+--------------------------------------------------------------------------------
+import qualified Data.Map as Map
+import qualified Data.List as List
+import qualified Data.Char as Char
 
--- No sé si se supone que usemos los tipos tal cual lo especificaron o podemos definir otros por conveniencia
--- Tipos
---------------------------------------
-type Opciones  = M.Map String Oraculo
+import Text.ParserCombinators.ReadP
+import Control.Applicative((<|>))
+
+
+-- Data types
+--------------------------------------------------------------------------------
 data Oraculo   = Prediccion String | Pregunta String Opciones
+type Opciones  = Map.Map String Oraculo
 
 
 -- Construcción
---------------------------------------
+--------------------------------------------------------------------------------
 crearOraculo :: String -> Oraculo
 crearOraculo = Prediccion
 
+
 -- Acceso
---------------------------------------
+--------------------------------------------------------------------------------
 prediccion :: Oraculo -> String
 prediccion (Prediccion s) = s
-prediccion _ = "Lo siento, este Oráculo no es una predicción."
+--prediccion _ = "Lo siento, este Oráculo no es una predicción."
 
 pregunta :: Oraculo -> String
 pregunta (Pregunta s _) = s
-pregunta _ = "Lo siento, este Oráculo no es una pregunta."
+--pregunta _ = "Lo siento, este Oráculo no es una pregunta."
 
 opciones :: Oraculo -> Opciones
 opciones (Pregunta _ o) = o
@@ -34,25 +46,59 @@ opciones (Pregunta _ o) = o
 
 respuesta :: Oraculo -> String -> Oraculo
 respuesta (Pregunta p o) r = 
-	case M.lookup r o of
-		Nothing -> Pregunta ("Error: No existe tal respuesta!\n\n"++p) o
-		Just o  -> o
+  case Map.lookup r o of
+    Nothing -> Pregunta ("Error: No existe tal respuesta para la pregunta!\n\n"++p) o
+    Just o  -> o
 
 
 -- Modificación
---------------------------------------
--- ramificar :: [String] -> [Oraculo] -> String -> Oraculo
--- Sinceramente no entiendo qué se supone que piden en esta función
+--------------------------------------------------------------------------------
+ramificar :: [String] -> [Oraculo] -> String -> Oraculo
+ramificar rs os s = Pregunta s ops
+  where ops = Map.fromList $ zip rs os
+
 
 -- Instancias
---------------------------------------
+--------------------------------------------------------------------------------
 instance Show Oraculo where
-	show (Prediccion s)   = show s
-	show (Pregunta s ops) = show $ s ++ '\n':'\n':"Y aqui las opciones"
-  
--- NPI de como hacer el parser (yet)
---
--- readsOraculo (x:xs) = [ (f, r) | (f, '\n':r) <- readsOraculo xs ]
--- readsOraculo s		= [ (f, t) | (f,t) <- reads s ]  
--- instance Read Oraculo where
--- 	readsPrec _ s = readsOraculo s
+  show (Prediccion s)   = "=>" ++ s ++ "<="
+  show (Pregunta s ops) = s ++ "?" ++ "\n\n" ++ showOps
+    where showOps = Map.foldr (++) [] $ Map.mapWithKey (\k v -> '{':k ++ "::" ++ show v ++ "}\n") ops
+
+instance Read Oraculo where
+  readsPrec _ = readP_to_S pOraculo
+
+
+-- Parser (Para uso en Read Oraculo) 
+--------------------------------------------------------------------------------
+pPrediccion :: ReadP Oraculo
+pPrediccion = do
+  text <- between (string "=>") (string "<=") $ many get
+  return (Prediccion text)
+
+pPreguntaOnly :: ReadP String
+pPreguntaOnly = do
+  text <- many1 get
+  ques <- char '?'
+  return text
+
+pRowCapsule :: ReadP (String, Oraculo)
+pRowCapsule = between (char '{') (char '}') pRow
+
+pRow :: ReadP (String, Oraculo)
+pRow = do
+  skipSpaces
+  respuesta <- many1 get
+  string "::"
+  oraculo <- pOraculo
+  skipSpaces
+  return (respuesta, oraculo)
+
+pOraculo :: ReadP Oraculo
+pOraculo = do
+  skipSpaces
+  pPrediccion <|> do
+    pregunta <- pPreguntaOnly
+    skipSpaces
+    resOps <- many1 pRowCapsule
+    return (Pregunta pregunta (Map.fromList resOps))
