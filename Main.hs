@@ -34,15 +34,15 @@ predecir (O.Prediccion s) = do
 	salir
 predecir (O.Pregunta p ops) = do
 	putStrLn p
-	mapM_ (\(s,o) -> putStrLn '-':s) ops
+	mapM_ (\(s) -> putStrLn (read ("-"++(show s)))) ops
 	respuesta <- getLine
 	-- when (respuesta == "Ninguna") IO () -- Npi de qué debe hacer
 	if M.member respuesta ops
 		then
 			let o = lookup respuesta ops
 				in predecir o
-		else
-			predecir (O.Pregunta p ops)
+	else
+		predecir (O.Pregunta p ops)
 
 
 
