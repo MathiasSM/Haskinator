@@ -55,6 +55,17 @@ persistir (O.Prediccion p) = do
 	putStrLn "Guardando oráculo..."
 	writeFile filename (p)
 
+persistir (O.Pregunta p o) = do
+	putStrLn "Ingrese el nombre del archivo donde desea guardar su oráculo"
+	filename <- getLine
+	mapM_ (\(k, v) -> appendFile filename (k ++ "\n")) (M.toList o)
+{-
+Probar cargando main
+Colocando en ghci:
+let o = O.crearOraculo "Python"
+let ramificacion = O.ramificar ["Pythoon"] [o] "Su lenguaje es imperativo?"
+Y luego ejecutar: persistir ramificar
+-}
 
 salir :: IO()
 salir = putStrLn "Gracias por usar el glorioso Haskinator!"
