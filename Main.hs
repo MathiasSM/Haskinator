@@ -52,23 +52,30 @@ predecir (O.Pregunta p ops) = do
 salir :: IO()
 salir = putStrLn "Gracias por usar el glorioso Haskinator!"
 
-opciones = M.fromList [ ("Crear Oráculo Nuevo",        crearOraculo),
+{-opciones = M.fromList [ ("Crear Oráculo Nuevo",        crearOraculo),
 												("Hacer una Predicción",       predecir),
 												("Guardar el Oráculo actual",  persistir),
 												("Cargar un Oráculo",          cargar),
 												("Consultar Pregunta Crucial", crucial),
-												("Salir",                      salir)]
+												("Salir",                      salir)]-}
+
+opciones = M.fromList [ ("Crear Oráculo Nuevo",        crearOraculo)]
 
 fakeMain = do
 	putStrLn "Por favor, elige una opción:"
-	mapM_ (\(k, v) -> putStrLn ('-':k)) (M.toList ops)
+	mapM_ (\(k, v) -> putStrLn ('-':k)) (M.toList opciones)
 	respuesta <- getLine
 	if M.member respuesta opciones
-		then return $ M.lookup respuesta opciones
-		else do
-			putStrLn "...Hmmm... No entendí lo que quieres."
-			putStrLn "Escribe la opción que deseas"
-			fakeMain
+		then do
+			let c = M.lookup respuesta opciones
+			case c of
+				Just c -> c
+
+
+	else do
+		putStrLn "...Hmmm... No entendí lo que quieres."
+		putStrLn "Escribe la opción que deseas"
+		fakeMain
 
 main = do
 	putStrLn "Bienvenido al glorioso Haskinator!"
