@@ -5,7 +5,8 @@ module Oraculo
 , prediccion
 , pregunta
 , opciones
-, respuesta 
+, respuesta
+, ramificar
 ) where
 
 -- Imports
@@ -45,7 +46,7 @@ opciones (Pregunta _ o) = o
 -- opciones _ = "Lo siento, no hay opción si es una predicción."
 
 respuesta :: Oraculo -> String -> Oraculo
-respuesta (Pregunta p o) r = 
+respuesta (Pregunta p o) r =
   case Map.lookup r o of
     Nothing -> Pregunta ("Error: No existe tal respuesta para la pregunta!\n\n"++p) o
     Just o  -> o
@@ -69,7 +70,7 @@ instance Read Oraculo where
   readsPrec _ = readP_to_S pOraculo
 
 
--- Parser (Para uso en Read Oraculo) 
+-- Parser (Para uso en Read Oraculo)
 --------------------------------------------------------------------------------
 pPrediccion :: ReadP Oraculo
 pPrediccion = do
