@@ -65,6 +65,9 @@ Colocando en ghci:
 let o = O.crearOraculo "Python"
 let ramificacion = O.ramificar ["Pythoon"] [o] "Su lenguaje es imperativo?"
 Y luego ejecutar: persistir ramificar
+
+No se como leer/acceder los elementos en el oraculo (el valor de v).
+Tal vez habria que hacer una funcion que convierta algo de tipo Opciones a String, o que desempaque la tupla de opciones?
 -}
 
 salir :: IO()
