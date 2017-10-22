@@ -34,13 +34,16 @@ predecir (O.Prediccion s) = do
 	salir
 predecir (O.Pregunta p ops) = do
 	putStrLn p
-	mapM_ (\(s) -> putStrLn (read ("-"++(show s)))) ops
+	mapM_ (\(k, v) -> putStrLn ('-':k)) (M.toList ops)
 	respuesta <- getLine
 	-- when (respuesta == "Ninguna") IO () -- Npi de qué debe hacer
 	if M.member respuesta ops
-		then
-			let o = lookup respuesta ops
-				in predecir o
+		then do
+			let o = lookup respuesta (M.toList ops)
+			case o of
+			  Nothing -> salir
+			  Just o -> predecir o
+				--in predecir o
 	else
 		predecir (O.Pregunta p ops)
 
@@ -58,7 +61,7 @@ opciones = M.fromList [ ("Crear Oráculo Nuevo",        crearOraculo),
 
 fakeMain = do
 	putStrLn "Por favor, elige una opción:"
-	mapM_ (\(s,_) -> putStrLn '-':s) opciones
+	mapM_ (\(k, v) -> putStrLn ('-':k)) (M.toList ops)
 	respuesta <- getLine
 	if M.member respuesta opciones
 		then return $ M.lookup respuesta opciones
