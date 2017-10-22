@@ -48,6 +48,13 @@ predecir (O.Pregunta p ops) = do
 		predecir (O.Pregunta p ops)
 
 
+persistir :: O.Oraculo -> IO ()
+persistir (O.Prediccion p) = do
+	putStrLn "Ingrese el nombre del archivo donde desea guardar su oráculo"
+	filename <- getLine
+	putStrLn "Guardando oráculo..."
+	writeFile filename (p)
+
 
 salir :: IO()
 salir = putStrLn "Gracias por usar el glorioso Haskinator!"
