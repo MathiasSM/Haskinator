@@ -1,5 +1,6 @@
 import System.Exit
 import System.IO
+import System.Directory
 import qualified Oraculo as O
 import qualified Data.Map as M
 
@@ -151,10 +152,16 @@ cargarO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 cargarO o ds = do
   putStrLn $ haskiTalks ++ "Ingresa el nombre del archivo de donde deseas cargar un oráculo:"
   filename <- getLine'
-  putStrLn $ haskiTalks ++ "Cargando oráculo..."
-  withFile filename ReadMode (\file -> do
-    s <- hGetContents file
-    readIO s) -- TODO: catchear errores
+  fileExists <- doesFileExist filename  
+  if fileExists
+    then do
+      putStrLn $ haskiTalks ++ "Cargando oráculo..."
+      withFile filename ReadMode (\file -> do
+        s <- hGetContents file
+        readIO s)
+  else do 
+    putStrLn "El archivo no existe!" 
+    return (o, ds)
 
 
 crucial :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
