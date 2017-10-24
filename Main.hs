@@ -165,8 +165,19 @@ cargarO o ds = do
 
 
 crucial :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
-crucial _ _ = do
-  die "Falta implementar"
+crucial o ds = do
+    putStrLn $ haskiTalks ++ "Introduzca su primera predicción a consultar:"
+    prediccion1 <- getLine'
+    putStrLn $ haskiTalks ++ "Introduzca su segunda predicción a consultar:"
+    prediccion2 <- getLine'
+    if not (prediccion1 `elem` ds) || not (prediccion2 `elem` ds)
+        then do
+            putStrLn $ haskiTalks ++ "Alguna de las predicciones ingresadas no se encuentra dentro del oráculo."
+            return (o, ds)
+    else do
+        return (o, ds)
+
+
 
 salirO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 salirO _ _ = do
