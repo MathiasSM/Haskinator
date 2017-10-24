@@ -44,6 +44,16 @@ currentO :: Direcciones -> O.Oraculo -> O.Oraculo
 currentO [] 		o	= o
 currentO (d:ds) o = currentO ds $ O.respuesta o d
 
+-- Util LCA
+lca :: Eq a => [a] -> [a] -> Maybe a
+lca [] _ = Nothing
+lca _ [] = Nothing
+lca (x:xs) (y:ys) 
+    | x == y && (take 1 xs) == (take 1 ys)                = lca (xs) (ys)
+    | x == y && (take 1 xs) /= (take 1 ys)                = Just x
+    | otherwise                                           = Nothing
+
+
 
 newO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 newO o dirs = do
