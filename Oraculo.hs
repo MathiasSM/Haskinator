@@ -21,7 +21,7 @@ import Control.Applicative((<|>))
 
 -- Data types
 --------------------------------------------------------------------------------
-data Oraculo   = Prediccion String | Pregunta String Opciones
+data Oraculo   = Prediccion String | Pregunta String Opciones | Nada
 type Opciones  = Map.Map String Oraculo
 
 
@@ -35,20 +35,20 @@ crearOraculo = Prediccion
 --------------------------------------------------------------------------------
 prediccion :: Oraculo -> String
 prediccion (Prediccion s) = s
---prediccion _ = "Lo siento, este Oráculo no es una predicción."
+prediccion _ = error "Este Oráculo no es una predicción."
 
 pregunta :: Oraculo -> String
 pregunta (Pregunta s _) = s
---pregunta _ = "Lo siento, este Oráculo no es una pregunta."
+pregunta _ = error "Este Oráculo no es una pregunta."
 
 opciones :: Oraculo -> Opciones
 opciones (Pregunta _ o) = o
--- opciones _ = "Lo siento, no hay opción si es una predicción."
+opciones _ = error "No hay opción si el oráculo es una predicción."
 
 respuesta :: Oraculo -> String -> Oraculo
 respuesta (Pregunta p o) r =
   case Map.lookup r o of
-    Nothing -> Pregunta ("Error: No existe tal respuesta para la pregunta!\n\n"++p) o
+    Nothing -> error "No existe tal respuesta!"
     Just o  -> o
 
 
@@ -69,6 +69,13 @@ instance Show Oraculo where
 instance Read Oraculo where
   readsPrec _ = readP_to_S pOraculo
 
+instance Eq Oraculo where
+  Nada         == Nada            = True
+  Prediccion a == Prediccion b    =   a == b 
+  Pregunta p o == Pregunta p' o'  =   p == p' && o == o' 
+  Pregunta _ _ == _               = False
+  Prediccion _ == _               = False
+  Nada         == _               = False
 
 -- Parser (Para uso en Read Oraculo)
 --------------------------------------------------------------------------------
