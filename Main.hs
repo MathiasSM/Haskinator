@@ -41,9 +41,11 @@ getLine' = do
 
 -- Util: dada una raíz y una lista de direcciones, dame el oráculo resultante
 -- Reciba las direcciones al revés
-currentO :: Direcciones -> O.Oraculo -> O.Oraculo
-currentO []     o = o
-currentO (d:ds) o = currentO ds $ O.respuesta o d
+currentO' :: Direcciones -> O.Oraculo -> O.Oraculo
+currentO' []     o = o
+currentO' (d:ds) o = currentO ds $ O.respuesta o d
+currentO :: Direcciones -> O.Oraculo -> O.Oraculo 
+currentO ds = currentO' $ reverse ds 
 
 -- Util LCA
 lca :: Eq a => [a] -> [a] -> Maybe a
@@ -74,15 +76,16 @@ newO o dirs = do
 
 
 -- Recibe inicialmente las direcciones invertidas, el oráculo raíz y la nueva hoja
-normalizarO :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
-normalizarO [k] o h = O.Pregunta (O.pregunta o) nuOpts
-  where nuOpts = M.insert k h $ O.opciones o
-normalizarO (k:ks) o h = O.Pregunta (O.pregunta o) nuOpts
+normalizarO' :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
+normalizarO' [] _ h = h
+normalizarO' (k:ks) o h = O.Pregunta p (M.insert k newChild opts)
   where 
-    nuOpts  = M.insert k nuChild $ O.opciones o
-    nuChild = normalizarO ks (O.respuesta o k) h
-normalizarO [] _ h = h
+    (p, opts)   = (O.pregunta o, O.opciones o)  
+    newChild    = normalizarO' ks oldChild h
+    oldChild    = O.respuesta o k
 
+normalizarO :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
+normalizarO ds = normalizarO' $ reverse ds 
 
 addPreguntaO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 addPreguntaO o ds = do
@@ -97,7 +100,7 @@ addPreguntaO o ds = do
   putStrLn $ haskiTalks ++ "Dime qué opción/respuesta corresponde a mi predicción original:"
   op <- getLine'
   let o' = O.ramificar [op', op] [p', p] pregunta
-  let new_root = normalizarO (reverse ds) o o'
+  let new_root = normalizarO ds o o'
   putStrLn $ haskiTalks ++ "He agregado la nueva posible predicción!"
   return ( new_root, [] )
 
@@ -116,8 +119,8 @@ predecirO o ds = do
         else addPreguntaO o ds 
     O.Pregunta _ _ -> do
       putStrLn $ haskiTalks ++ O.pregunta oraculo_actual
-      mapM_ (\(p, o) -> putStrLn (haskiTabed++p)) $ M.toList $ O.opciones oraculo_actual
-      putStrLn $ haskiTabed++"Ninguna"
+      mapM_ (\(p, o) -> putStrLn (haskiTabed++"- "++p)) $ M.toList $ O.opciones oraculo_actual
+      putStrLn $ haskiTabed++"- Ninguna"
       respuesta <- getLine'
       if respuesta == "Ninguna" 
         then do
@@ -125,10 +128,12 @@ predecirO o ds = do
           respuestaCorrecta <- getLine'
           putStrLn $ haskiTalks ++ "No sé mucho sobre eso, así que me deberás decir en qué pensabas (la predicción):"
           in_prediccion <- getLine'
-          let prediccion = O.crearOraculo in_prediccion
-          let new_actual = O.Pregunta (O.pregunta oraculo_actual) new_opciones
-                where new_opciones = M.insert respuestaCorrecta prediccion $ O.opciones oraculo_actual
-          return (normalizarO ds o new_actual, respuestaCorrecta:ds)
+          let new_root = normalizarO ds o new_actual
+                where 
+                  new_actual = O.Pregunta (O.pregunta oraculo_actual) new_opciones
+                  new_opciones = M.insert respuestaCorrecta prediccion $ O.opciones oraculo_actual
+                  prediccion = O.crearOraculo in_prediccion
+          return (new_root, [])
         else do
           case M.lookup respuesta $ O.opciones oraculo_actual of
             Just o' -> predecirO o (respuesta:ds)
@@ -166,16 +171,16 @@ cargarO o ds = do
 
 crucial :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 crucial o ds = do
-    putStrLn $ haskiTalks ++ "Introduzca su primera predicción a consultar:"
-    prediccion1 <- getLine'
-    putStrLn $ haskiTalks ++ "Introduzca su segunda predicción a consultar:"
-    prediccion2 <- getLine'
-    if not (prediccion1 `elem` ds) || not (prediccion2 `elem` ds)
-        then do
-            putStrLn $ haskiTalks ++ "Alguna de las predicciones ingresadas no se encuentra dentro del oráculo."
-            return (o, ds)
-    else do
-        return (o, ds)
+  putStrLn $ haskiTalks ++ "Introduzca su primera predicción a consultar:"
+  prediccion1 <- getLine'
+  putStrLn $ haskiTalks ++ "Introduzca su segunda predicción a consultar:"
+  prediccion2 <- getLine'
+  if not (prediccion1 `elem` ds) || not (prediccion2 `elem` ds)
+    then do
+      putStrLn $ haskiTalks ++ "Alguna de las predicciones ingresadas no se encuentra dentro del oráculo."
+      return (o, ds)
+  else do
+    return (o, ds)
 
 
 
