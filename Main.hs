@@ -156,9 +156,9 @@ cargarO o ds = do
   if fileExists
     then do
       putStrLn $ haskiTalks ++ "Cargando oráculo..."
-      withFile filename ReadMode (\file -> do
-        s <- hGetContents file
-        readIO s)
+      s <- readFile filename 
+      let new_o = O.crearOraculo s
+      return (o, ds)
   else do 
     putStrLn "El archivo no existe!" 
     return (o, ds)
