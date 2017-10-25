@@ -49,7 +49,7 @@ respuesta :: Oraculo -> String -> Oraculo
 respuesta (Pregunta p opts) s =
   case Map.lookup s opts of
     Just o  -> o
-    Nothing -> error $ "No existe tal respuesta!"
+    Nothing -> error $ "No existe tal respuesta!"   ++"\nRespuesta:\t"++(show s)++"\nOpciones:\t"++(show opts)
 
 
 -- Modificación

@@ -43,9 +43,11 @@ getLine' = do
 -- Reciba las direcciones al revés
 currentO' :: Direcciones -> O.Oraculo -> O.Oraculo
 currentO' []     o = o
-currentO' (d:ds) o = currentO ds $ O.respuesta o d
+currentO' (d:ds) o = currentO' ds $ O.respuesta o d
+
 currentO :: Direcciones -> O.Oraculo -> O.Oraculo 
 currentO ds = currentO' $ reverse ds 
+
 
 -- Util LCA
 lca :: Eq a => [a] -> [a] -> Maybe a
@@ -87,56 +89,58 @@ normalizarO' (k:ks) o h = O.Pregunta p (M.insert k newChild opts)
 normalizarO :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
 normalizarO ds = normalizarO' $ reverse ds 
 
-addPreguntaO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
-addPreguntaO o ds = do
-  let p = currentO ds o
+addPreguntaO :: O.Oraculo -> Direcciones -> O.Oraculo -> IO (O.Oraculo, Direcciones)
+addPreguntaO o ds oraculo_actual = do
   putStrLn $ haskiTalks ++ "Hmm... Ok. Dime la predicción correcta, por favor:"
-  in_p' <- getLine'
-  let p' = O.crearOraculo in_p'
+  p2' <- getLine'
   putStrLn $ haskiTalks ++ "¿Qué pregunta podría diferenciar la respuesta de mi predicción?:"
   pregunta <- getLine'
   putStrLn $ haskiTalks ++ "Dime qué opción/respuesta corresponde a la respuesta correcta"
-  op' <- getLine'
+  op2 <- getLine'
   putStrLn $ haskiTalks ++ "Dime qué opción/respuesta corresponde a mi predicción original:"
-  op <- getLine'
-  let o' = O.ramificar [op', op] [p', p] pregunta
-  let new_root = normalizarO ds o o'
+  op1 <- getLine'
+  let new_root = normalizarO ds o new_current
+        where (p1, p2)    = (oraculo_actual, O.crearOraculo p2')
+              new_current = O.ramificar [op1, op2] [p1, p2] pregunta
   putStrLn $ haskiTalks ++ "He agregado la nueva posible predicción!"
   return ( new_root, [] )
+
+addOpcionO :: O.Oraculo -> Direcciones -> O.Oraculo -> IO (O.Oraculo, Direcciones)
+addOpcionO o ds oraculo_actual = do
+  putStrLn $ haskiTalks ++ "Oh! Ok, dime la respuesta correcta a la pregunta (en este caso): "
+  respuestaCorrecta <- getLine'
+  putStrLn $ haskiTalks ++ "No sé mucho sobre eso, así que me deberás decir en qué pensabas (la predicción):"
+  in_prediccion <- getLine'
+  let new_root = normalizarO ds o new_actual
+        where 
+          new_actual = O.Pregunta (O.pregunta oraculo_actual) new_opciones
+          new_opciones = M.insert respuestaCorrecta prediccion $ O.opciones oraculo_actual
+          prediccion = O.crearOraculo in_prediccion
+  return (new_root, [])
 
 
 predecirO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 predecirO o ds = do
   let oraculo_actual = currentO ds o
   case oraculo_actual of 
-    O.Prediccion _ -> do 
-      putStr $ haskiTalks ++ (preguntaFinal . O.prediccion) oraculo_actual
+    O.Prediccion p -> do 
+      putStr $ haskiTalks ++ preguntaFinal p
       yes <- yesno
       if yes 
         then do
           putStrLn $ haskiTalks ++ "Wubbalubbadubdub!"
           return $ (o, [])
-        else addPreguntaO o ds 
-    O.Pregunta _ _ -> do
-      putStrLn $ haskiTalks ++ O.pregunta oraculo_actual
-      mapM_ (\(p, o) -> putStrLn (haskiTabed++"- "++p)) $ M.toList $ O.opciones oraculo_actual
-      putStrLn $ haskiTabed++"- Ninguna"
+        else addPreguntaO o ds oraculo_actual
+    O.Pregunta p opts -> do
+      putStrLn $ haskiTalks ++ p
+      mapM_ (\(i, _) -> putStrLn (haskiTabed++"- "++i)) $ M.toList opts
+      putStrLn $ haskiTabed ++ "- Ninguna"
       respuesta <- getLine'
       if respuesta == "Ninguna" 
-        then do
-          putStrLn $ haskiTalks ++ "Oh! Ok, dime la respuesta correcta a la pregunta (en este caso): "
-          respuestaCorrecta <- getLine'
-          putStrLn $ haskiTalks ++ "No sé mucho sobre eso, así que me deberás decir en qué pensabas (la predicción):"
-          in_prediccion <- getLine'
-          let new_root = normalizarO ds o new_actual
-                where 
-                  new_actual = O.Pregunta (O.pregunta oraculo_actual) new_opciones
-                  new_opciones = M.insert respuestaCorrecta prediccion $ O.opciones oraculo_actual
-                  prediccion = O.crearOraculo in_prediccion
-          return (new_root, [])
+        then addOpcionO o ds oraculo_actual
         else do
-          case M.lookup respuesta $ O.opciones oraculo_actual of
-            Just o' -> predecirO o (respuesta:ds)
+          case M.lookup respuesta opts of
+            Just _ -> predecirO o (respuesta:ds)
             otherwise -> do
               putStrLn $ haskiTalks ++ "Lo siento. No sé a qué opción te refieres. "
               predecirO o ds
@@ -162,8 +166,8 @@ cargarO o ds = do
     then do
       putStrLn $ haskiTalks ++ "Cargando oráculo..."
       s <- readFile filename 
-      let new_o = O.crearOraculo s
-      return (o, ds)
+      let new_o = read s :: O.Oraculo
+      return (new_o, ds)
   else do 
     putStrLn "El archivo no existe!" 
     return (o, ds)
