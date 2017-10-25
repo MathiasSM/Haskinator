@@ -18,6 +18,7 @@ preguntaFinal s = "Estás pensando en... " ++ s ++ " ?"
 yesno :: IO Bool
 yesno = do
   putStr " [y/n] "
+  hFlush stdout
   respuesta <- getLine
   if respuesta == "y" 
     then return True
@@ -31,6 +32,7 @@ yesno = do
 getLine' :: IO String
 getLine' = do
   putStr haskiTabed
+  hFlush stdout
   s <- getLine
   if (not . null) s -- Deberíamos revisar si el string es "visible" (haya algo que no sea puro whitespace)
     then return s
