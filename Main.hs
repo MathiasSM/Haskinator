@@ -52,13 +52,20 @@ currentO ds = currentO' $ reverse ds
 
 
 -- Util LCA
-lca :: Eq a => [a] -> [a] -> Maybe a
-lca [] _ = Nothing
-lca _ [] = Nothing
-lca (x:xs) (y:ys) 
-    | x == y && (take 1 xs) == (take 1 ys)                = lca (xs) (ys)
-    | x == y && (take 1 xs) /= (take 1 ys)                = Just x
-    | otherwise                                           = Nothing
+lcaO :: Eq a => [a] -> [a] -> Maybe a
+lcaO [] _ = Nothing
+lcaO _ [] = Nothing
+lcaO (x:xs) (y:ys) 
+    | x /= y              = Nothing
+    | null xs || null ys  = Just x
+    | head xs == head ys  = lcaO xs ys
+    | otherwise           = Just x
+
+
+dfs s o@(O.Prediccion p)    = if s == p then Just [o] else Nothing
+dfs s o@(O.Pregunta p opts) = case ( filter ((/=) Nothing) $ map (\(_,o) -> dfs s o) (M.toList opts) ) of
+                                ((Just x):xs) -> Just (o:x)
+                                otherwise     -> Nothing
 
 
 
@@ -177,17 +184,17 @@ cargarO o ds = do
 
 crucial :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 crucial o ds = do
-  putStrLn $ haskiTalks ++ "Introduzca su primera predicción a consultar:"
-  prediccion1 <- getLine'
-  putStrLn $ haskiTalks ++ "Introduzca su segunda predicción a consultar:"
-  prediccion2 <- getLine'
-  if not (prediccion1 `elem` ds) || not (prediccion2 `elem` ds)
-    then do
-      putStrLn $ haskiTalks ++ "Alguna de las predicciones ingresadas no se encuentra dentro del oráculo."
-      return (o, ds)
-  else do
-    return (o, ds)
-
+  putStrLn $ haskiTalks ++ "Ingresa una primera predicción a consultar:"
+  p1 <- getLine'
+  putStrLn $ haskiTalks ++ "Ingresa una segunda predicción a consultar:"
+  p2 <- getLine'
+  let l1 = maybe [] id $ dfs p1 o
+      l2 = maybe [] id $ dfs p2 o
+      lca = lcaO l1 l2
+  putStrLn $ show l1
+  putStrLn $ show l2
+  putStrLn $ show lca
+  return (o, ds)
 
 
 salirO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
