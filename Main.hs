@@ -61,10 +61,19 @@ lcaO (x:xs) (y:ys)
     | head xs == head ys  = lcaO xs ys
     | otherwise           = Just x
 
+lcaO' :: [(O.Oraculo,a)] -> [(O.Oraculo,a)] -> Maybe (O.Oraculo,(a,a))
+lcaO' [] _ = Nothing
+lcaO' _ [] = Nothing
+lcaO' ((ox,ix):xs) ((oy,iy):ys) 
+    | ox /= oy                            = Nothing
+    | null xs || null ys                  = Just (ox,(ix,iy))
+    | (fst . head) xs == (fst . head) ys  = lcaO' xs ys
+    | otherwise                           = Just (ox,(ix,iy))
 
-dfs s o@(O.Prediccion p)    = if s == p then Just [o] else Nothing
-dfs s o@(O.Pregunta p opts) = case ( filter ((/=) Nothing) $ map (\(_,o) -> dfs s o) (M.toList opts) ) of
-                                ((Just x):xs) -> Just (o:x)
+
+dfs s o@(O.Prediccion p)    = if s == p then Just [(o,"")] else Nothing
+dfs s o@(O.Pregunta p opts) = case ( filter (((/=) Nothing) . fst) $ map (\(k,v) -> (dfs s v, k)) (M.toList opts) ) of
+                                ((Just x,k):xs) -> Just ((o,k):x)
                                 otherwise     -> Nothing
 
 
@@ -190,10 +199,11 @@ crucial o ds = do
   p2 <- getLine'
   let l1 = maybe [] id $ dfs p1 o
       l2 = maybe [] id $ dfs p2 o
-      lca = lcaO l1 l2
-  putStrLn $ show l1
-  putStrLn $ show l2
-  putStrLn $ show lca
+      lca = maybe (O.Nada,([],[])) id $ lcaO' (l1) (l2)
+  putStrLn $ haskiTalks ++ "La pregunta que decide entre ambas opciones es:"
+  putStrLn $ haskiTabed ++ (O.pregunta $ fst lca)
+  putStrLn $ haskiTabed ++ "("++p1++") \t- " ++ (fst $ snd lca) 
+  putStrLn $ haskiTabed ++ "("++p2++") \t- " ++ (snd $ snd lca) 
   return (o, ds)
 
 
