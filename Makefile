@@ -1,7 +1,7 @@
-all: Main clean 
+all: Haskinator clean 
 
-Main : Main.hs
-	ghc --make Main
+Haskinator : Haskinator.hs
+	ghc --make Haskinator
 
 clean:
-	rm -f Main.o Oraculo.o Main.hi Oraculo.hi
+	rm -f Haskinator.o Oraculo.o Haskinator.hi Oraculo.hi

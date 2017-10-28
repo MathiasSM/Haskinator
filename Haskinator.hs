@@ -10,11 +10,15 @@ haskiTalks = "|@| "
 haskiTabed = "    "
 userTalks  = "|?| "
 
--- Util
+{-SECCION DE UTILIDADES Y FUNCIONES AUXILIARES-}
+
+-- Util: Función que presenta la Predicción final alcanza al usuario a través del stdout
 preguntaFinal :: String -> String
 preguntaFinal s = "Estás pensando en... " ++ s ++ " ?"
 
--- Util
+
+-- Util: Función que presenta al usuario las posibles opciones (si/no) que puede responder 
+-- cuando tiene que decidir si la prediccion obtenida es correcta o no.
 yesno :: IO Bool
 yesno = do
   putStr " [y/n] "
@@ -28,13 +32,14 @@ yesno = do
         putStr $ "\n" ++ haskiTabed ++ "Intenta otra vez:"
         yesno
 
--- Util
+-- Util: Función que recibe una respuesta por parte del usuario a través del stdin y verifica
+-- que dicha entrada no sea vacía
 getLine' :: IO String
 getLine' = do
   putStr haskiTabed
   hFlush stdout
   s <- getLine
-  if (not . null) s -- Deberíamos revisar si el string es "visible" (haya algo que no sea puro whitespace)
+  if (not . null) s
     then return s
     else do 
       putStrLn $ haskiTalks ++ "No puede ser un string vacío! Intenta otra vez:"
@@ -42,7 +47,7 @@ getLine' = do
 
 
 -- Util: dada una raíz y una lista de direcciones, dame el oráculo resultante
--- Reciba las direcciones al revés
+-- Recibe las direcciones al revés
 currentO' :: Direcciones -> O.Oraculo -> O.Oraculo
 currentO' []     o = o
 currentO' (d:ds) o = currentO' ds $ O.respuesta o d
@@ -51,7 +56,10 @@ currentO :: Direcciones -> O.Oraculo -> O.Oraculo
 currentO ds = currentO' $ reverse ds 
 
 
--- Util LCA
+
+-- Util: Lowest  Common Ancestor
+-- Dadas dos listas [a_0, ..., a_n] y [a_0, ... , b_n] que representan un camino 
+-- desde a_0 hasta a_n y b_n, devuelve el ancestro común más bajo entre a_n y b_n
 lcaO :: Eq a => [a] -> [a] -> Maybe a
 lcaO [] _ = Nothing
 lcaO _ [] = Nothing
@@ -61,6 +69,8 @@ lcaO (x:xs) (y:ys)
     | head xs == head ys  = lcaO xs ys
     | otherwise           = Just x
 
+
+-- Misma versión de lcaO pero adaptado a oráculos y tuplas
 lcaO' :: [(O.Oraculo,a)] -> [(O.Oraculo,a)] -> Maybe (O.Oraculo,(a,a))
 lcaO' [] _ = Nothing
 lcaO' _ [] = Nothing
@@ -71,13 +81,18 @@ lcaO' ((ox,ix):xs) ((oy,iy):ys)
     | otherwise                           = Just (ox,(ix,iy))
 
 
+-- Util
+-- Algoritmo de DFS adaptado a Oráculos para verificar si una cierta Predicción 
+-- existe dentro del árbol de oráculos actual
 dfs s o@(O.Prediccion p)    = if s == p then Just [(o,"")] else Nothing
 dfs s o@(O.Pregunta p opts) = case ( filter (((/=) Nothing) . fst) $ map (\(k,v) -> (dfs s v, k)) (M.toList opts) ) of
                                 ((Just x,k):xs) -> Just ((o,k):x)
                                 otherwise     -> Nothing
 
 
+{- SECCIÓN DE OPERACIONES SOBRE EL ÁRBOL DE ORÁCULOS Y LOS OŔACULOS-}
 
+-- Dada una predicción, se crea un oráculo nuevo con dicha predicción
 newO :: O.Oraculo -> Direcciones -> IO (O.Oraculo, Direcciones)
 newO o dirs = do
   putStrLn $ haskiTalks ++ "Para crear un oráculo desde cero, ingrese una predicción:"
@@ -93,9 +108,9 @@ newO o dirs = do
       return (new_o, [])
 
 
-
-
--- Recibe inicialmente las direcciones invertidas, el oráculo raíz y la nueva hoja
+-- Función que al momento de insertar un nuevo oráculo/pregunta en el árbol actual, 
+-- reorganiza toda la información previamente existente. Recibe inicialmente 
+-- las direcciones invertidas, el oráculo raíz y la nueva hoja
 normalizarO' :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
 normalizarO' [] _ h = h
 normalizarO' (k:ks) o h = O.Pregunta p (M.insert k newChild opts)
@@ -107,6 +122,8 @@ normalizarO' (k:ks) o h = O.Pregunta p (M.insert k newChild opts)
 normalizarO :: Direcciones -> O.Oraculo -> O.Oraculo -> O.Oraculo
 normalizarO ds = normalizarO' $ reverse ds 
 
+
+-- Función que agrega una nueva pregunta al oráculo actual. 
 addPreguntaO :: O.Oraculo -> Direcciones -> O.Oraculo -> IO (O.Oraculo, Direcciones)
 addPreguntaO o ds oraculo_actual = do
   putStrLn $ haskiTalks ++ "Hmm... Ok. Dime la predicción correcta, por favor:"
