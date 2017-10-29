@@ -1,0 +1,18 @@
+PROYECTO DE HASKELL - HAKINATOR
+
+Integrantes: Mathias San Miguel 1311310 - Julio Fuenmayor 1310488
+
+Instrucciones de uso:
+
+1) Descargar todos los archivos, y ejecutar el comando 'make' dentro del
+directorio en donde se encuentran dichos archivos para que se cree un ejecutable
+del programa.
+
+2) Una vez que se haya compilado el programa, ejecutar a través de la terminal el
+archivo "Hakinator" que se ha generado de la siguiente manera:
+
+$> make
+$> ./Haskinator
+
+3) Ingresar alguna opción válida dentro del menú inicial de Haskinator y empezar a
+utilizar el cliente.
